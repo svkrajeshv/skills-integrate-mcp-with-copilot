@@ -3,6 +3,55 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const loginSection = document.createElement("div");
+  loginSection.className = "login-section";
+  
+  // Add login section to the top of the page
+  document.body.insertBefore(loginSection, document.body.firstChild);
+  
+  let authToken = null;
+  
+  function updateLoginSection() {
+    loginSection.innerHTML = authToken 
+      ? `<div class="logged-in">
+           <span>Logged in as: ${atob(authToken).split(':')[0]}</span>
+           <button id="logout-btn">Logout</button>
+         </div>`
+      : `<div class="login-form">
+           <button id="login-btn">Teacher Login</button>
+         </div>`;
+    
+    // Update visibility of signup form and delete buttons
+    signupForm.style.display = authToken ? "block" : "none";
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.style.display = authToken ? "inline" : "none";
+    });
+    
+    // Add event listeners
+    if (authToken) {
+      document.getElementById("logout-btn").addEventListener("click", handleLogout);
+    } else {
+      document.getElementById("login-btn").addEventListener("click", handleLogin);
+    }
+  }
+
+  async function handleLogin() {
+    const username = prompt("Enter username:");
+    if (!username) return;
+    
+    const password = prompt("Enter password:");
+    if (!password) return;
+    
+    authToken = btoa(`${username}:${password}`);
+    updateLoginSection();
+    fetchActivities(); // Refresh to show/hide buttons
+  }
+  
+  function handleLogout() {
+    authToken = null;
+    updateLoginSection();
+    fetchActivities(); // Refresh to show/hide buttons
+  }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -80,6 +129,9 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/unregister?email=${encodeURIComponent(email)}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Basic ${authToken}`
+          }
         }
       );
 
@@ -124,6 +176,9 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/signup?email=${encodeURIComponent(email)}`,
         {
           method: "POST",
+          headers: {
+            'Authorization': `Basic ${authToken}`
+          }
         }
       );
 
